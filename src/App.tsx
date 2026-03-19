@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Menu, Zap, Loader2 } from 'lucide-react';
+import { Zap, Loader2 } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
@@ -29,7 +29,6 @@ import PaymentsPage from './pages/tenant/PaymentsPage';
 import TenantChatPage from './pages/tenant/ChatPage';
 import ProfilePage from './pages/tenant/ProfilePage';
 
-// ─── Loading screen shown while Supabase checks the session ─────────────────
 function LoadingScreen() {
   return (
     <div style={{
@@ -50,7 +49,6 @@ function LoadingScreen() {
   );
 }
 
-// ─── Route guard ─────────────────────────────────────────────────────────────
 function ProtectedRoute({ allowedRole }: { allowedRole?: 'owner' | 'tenant' }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -60,36 +58,11 @@ function ProtectedRoute({ allowedRole }: { allowedRole?: 'owner' | 'tenant' }) {
   return <Outlet />;
 }
 
-// ─── Owner layout (desktop sidebar + mobile drawer) ──────────────────────────
+// Owner: top navbar + content below
 function OwnerLayout() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
     <>
-      {/* Mobile-only top bar */}
-      <header className="owner-mobile-header">
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          style={{ background: 'none', border: 'none', color: 'var(--color-text)', cursor: 'pointer', padding: 4, display: 'flex' }}
-        >
-          <Menu size={24} />
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Zap size={16} color="#fff" />
-          </div>
-          <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-text)' }}>RentFlow</span>
-        </div>
-        {/* Placeholder to balance the flex layout */}
-        <div style={{ width: 32 }} />
-      </header>
-
-      <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-
+      <Sidebar />
       <main className="app-content">
         <Outlet />
       </main>
@@ -97,7 +70,7 @@ function OwnerLayout() {
   );
 }
 
-// ─── Tenant layout ────────────────────────────────────────────────────────────
+// Tenant: same top navbar structure
 function TenantLayout() {
   return (
     <>
@@ -109,7 +82,6 @@ function TenantLayout() {
   );
 }
 
-// ─── Routes (must be inside AuthProvider to use useAuth) ─────────────────────
 function AppRoutes() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
@@ -126,7 +98,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Owner routes */}
       <Route element={<ProtectedRoute allowedRole="owner" />}>
         <Route element={<OwnerLayout />}>
           <Route path="/owner" element={<DashboardPage />} />
@@ -145,7 +116,6 @@ function AppRoutes() {
         <Route path="/onboarding" element={<OnboardingPage />} />
       </Route>
 
-      {/* Tenant routes */}
       <Route element={<ProtectedRoute allowedRole="tenant" />}>
         <Route element={<TenantLayout />}>
           <Route path="/tenant" element={<TenantDashboardPage />} />
@@ -158,15 +128,12 @@ function AppRoutes() {
 
       <Route
         path="*"
-        element={
-          <Navigate to={isAuthenticated ? (user?.role === 'owner' ? '/owner' : '/tenant') : '/login'} replace />
-        }
+        element={<Navigate to={isAuthenticated ? (user?.role === 'owner' ? '/owner' : '/tenant') : '/login'} replace />}
       />
     </Routes>
   );
 }
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <BrowserRouter>
