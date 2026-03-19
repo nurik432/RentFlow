@@ -24,7 +24,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null, isAuthenticated: false, isLoading: true,
   login: async () => ({ success: false }),
-  logout: async () => {},
   updateUser: async () => false,
   registerUser: async () => ({ success: false }),
   removeUser: async () => false,
@@ -88,13 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Восстановление сессии при загрузке
     const checkUser = async () => {
       try {
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Session timeout')), 5000)
-        );
-
-        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        if (error) throw error;
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('getSession error:', error.message);
+          setUser(null);
+          return;
+        }
 
         if (session?.user) {
           const profile = await fetchProfileWithRetry(session.user.id);
@@ -109,9 +107,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setUser(null);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Auth check error:', err);
-        clearCorruptedStorage();
+        // Чистим хранилище ТОЛЬКО при явно повреждённых данных,
+        // но НЕ при сетевых ошибках (fetch failed, timeout и т.п.)
+        const isNetworkError =
+          err.message?.includes('timeout') ||
+          err.message?.includes('fetch') ||
+          err.message?.includes('network') ||
+          err.message?.includes('Failed to fetch');
+        if (!isNetworkError) {
+          clearCorruptedStorage();
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -160,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     if (!email || !password) return { success: false, error: 'Введите email и пароль' };
 
     loginInProgressRef.current = true;
@@ -183,7 +190,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchAllUsers();
         return { success: true, role: profile.role };
       }
-      return { success: false, error: 'Профиль не найден' };
     } catch (e: any) {
       console.error('Login error:', e);
       return { success: false, error: e.message || 'Ошибка входа' };
