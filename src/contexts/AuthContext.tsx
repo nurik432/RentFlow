@@ -22,7 +22,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null, isAuthenticated: false, isLoading: true,
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
   login: async () => ({ success: false }),
   logout: async () => {},
   updateUser: async () => false,
@@ -31,7 +33,6 @@ const AuthContext = createContext<AuthContextType>({
   getAllUsers: () => [],
 });
 
-// Маппинг строки БД -> объект User
 const mapProfile = (data: any): User => ({
   id: data.id,
   name: data.name,
@@ -50,18 +51,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [allUsersCache, setAllUsersCache] = useState<User[]>([]);
-
-  // Флаг: login() сейчас работает — onAuthStateChange не должен дублировать работу
   const loginInProgressRef = useRef(false);
 
   const fetchProfile = async (userId: string): Promise<User | null> => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    if (error || !data) return null;
-    return mapProfile(data);
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      if (error || !data) return null;
+      return mapProfile(data);
+    } catch {
+      return null;
+    }
   };
 
-  // Повторные попытки: триггер Supabase может запоздать на 300–700 мс
-  const fetchProfileWithRetry = async (userId: string, retries = 5, delayMs = 400): Promise<User | null> => {
+  const fetchProfileWithRetry = async (userId: string, retries = 6, delayMs = 400): Promise<User | null> => {
     for (let i = 0; i < retries; i++) {
       const profile = await fetchProfile(userId);
       if (profile) return profile;
@@ -71,131 +73,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchAllUsers = async () => {
-    const { data } = await supabase.from('profiles').select('*');
-    if (data) setAllUsersCache(data.map(mapProfile));
-  };
-
-  const clearCorruptedStorage = () => {
     try {
-      for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('sb-')) localStorage.removeItem(key);
-      }
-      sessionStorage.clear();
-    } catch (_) {}
+      const { data } = await supabase.from('profiles').select('*');
+      if (data) setAllUsersCache(data.map(mapProfile));
+    } catch { /* non-critical */ }
   };
 
   useEffect(() => {
-    // Восстановление сессии при загрузке
-    const checkUser = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.warn('getSession error:', error.message);
-          setUser(null);
-          return;
-        }
-
+    // onAuthStateChange fires INITIAL_SESSION on mount — the canonical Supabase v2 pattern.
+    // Handles both "existing session" and "no session" without a separate getSession() call.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'INITIAL_SESSION') {
         if (session?.user) {
           const profile = await fetchProfileWithRetry(session.user.id);
           if (profile) {
             setUser(profile);
-            await fetchAllUsers();
+            fetchAllUsers();
           } else {
-            // Сессия есть, профиля нет — сломанное состояние, чистим
             await supabase.auth.signOut();
             setUser(null);
           }
         } else {
           setUser(null);
         }
-      } catch (err: any) {
-        console.error('Auth check error:', err);
-        // Чистим хранилище ТОЛЬКО при явно повреждённых данных,
-        // но НЕ при сетевых ошибках (fetch failed, timeout и т.п.)
-        const isNetworkError =
-          err.message?.includes('timeout') ||
-          err.message?.includes('fetch') ||
-          err.message?.includes('network') ||
-          err.message?.includes('Failed to fetch');
-        if (!isNetworkError) {
-          clearCorruptedStorage();
-        }
+        setIsLoading(false);
+      } else if (event === 'SIGNED_IN' && session) {
+        if (loginInProgressRef.current) return; // login() is handling this
+        // Signed in from another tab
+        fetchProfileWithRetry(session.user.id).then(profile => {
+          if (profile) { setUser(profile); fetchAllUsers(); }
+          else supabase.auth.signOut();
+        });
+      } else if (event === 'SIGNED_OUT') {
         setUser(null);
-      } finally {
+        setAllUsersCache([]);
         setIsLoading(false);
       }
-    };
+    });
 
-    checkUser();
-
-    // onAuthStateChange нужен для: TOKEN_REFRESHED, выхода из другой вкладки,
-    // и SIGNED_IN из внешних источников (не через login())
-    let authListener: any;
-    try {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          // Пропускаем если login() уже обрабатывает этот SIGNED_IN
-          if (loginInProgressRef.current) return;
-
-          // Это вход из другой вкладки или восстановление сессии
-          setUser(prev => {
-            // Если пользователь уже установлен — не дёргаем
-            if (prev?.id === session.user.id) return prev;
-            return prev;
-          });
-          // Асинхронно обновляем профиль если нужно
-          const profile = await fetchProfileWithRetry(session.user.id);
-          if (profile) {
-            setUser(prev => prev?.id === profile.id ? prev : profile);
-            fetchAllUsers();
-          } else {
-            await supabase.auth.signOut();
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setAllUsersCache([]);
-        } else if (event === 'TOKEN_REFRESHED' && session) {
-          // Сессия обновлена — пользователь остаётся прежним
-        }
-      });
-      authListener = data;
-    } catch (e) {
-      console.error('Auth listener setup failed:', e);
-    }
+    // Safety: unblock UI if INITIAL_SESSION never fires
+    const fallback = setTimeout(() => setIsLoading(false), 6000);
 
     return () => {
-      authListener?.subscription?.unsubscribe();
+      subscription.unsubscribe();
+      clearTimeout(fallback);
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
     if (!email || !password) return { success: false, error: 'Введите email и пароль' };
 
     loginInProgressRef.current = true;
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+        if (error.message.includes('Invalid login credentials'))
           return { success: false, error: 'Неверный email или пароль' };
-        }
-        if (error.message.includes('Email not confirmed')) {
-          return { success: false, error: 'Email не подтверждён. Проверьте почту или отключите подтверждение в настройках Supabase.' };
-        }
+        if (error.message.includes('Email not confirmed'))
+          return { success: false, error: 'Email не подтверждён. Отключите «Confirm email» в настройках Supabase.' };
         return { success: false, error: error.message };
       }
 
-      // Ждём профиль (триггер может запоздать)
       const profile = await fetchProfileWithRetry(data.user.id);
       if (profile) {
         setUser(profile);
-        await fetchAllUsers();
+        fetchAllUsers();
         return { success: true, role: profile.role };
       } else {
         await supabase.auth.signOut();
-        return { success: false, error: 'Профиль не найден. Убедитесь что триггер handle_new_user создан в Supabase.' };
+        return { success: false, error: 'Профиль не найден. Проверьте что триггер handle_new_user создан в Supabase.' };
       }
     } catch (e: any) {
-      console.error('Login error:', e);
       return { success: false, error: e.message || 'Ошибка входа' };
     } finally {
       loginInProgressRef.current = false;
@@ -208,9 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAllUsersCache([]);
   };
 
-  const updateUser = async (updates: Partial<User>) => {
+  const updateUser = async (updates: Partial<User>): Promise<boolean> => {
     if (!user) return false;
-
     const dbUpdates: any = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
@@ -221,21 +171,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (updates.onboardingCompleted !== undefined) dbUpdates.onboarding_completed = updates.onboardingCompleted;
 
     const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', user.id);
-    if (!error) {
-      setUser({ ...user, ...updates });
-      return true;
-    }
+    if (!error) { setUser({ ...user, ...updates }); return true; }
     return false;
   };
 
   const registerUser = async (data: {
-    name: string; email: string; phone?: string; role: UserRole; password: string; preferredChannel?: NotificationChannel;
-  }) => {
+    name: string; email: string; phone?: string; role: UserRole;
+    password: string; preferredChannel?: NotificationChannel;
+  }): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
-      // Создаём отдельный клиент чтобы не затронуть сессию текущего владельца.
-      // Используем фиксированный ключ хранилища (не Date.now()) — иначе накапливается мусор.
       const { createClient } = await import('@supabase/supabase-js');
-      const tempSupabase = createClient(
+      const tempClient = createClient(
         import.meta.env.VITE_SUPABASE_URL,
         import.meta.env.VITE_SUPABASE_ANON_KEY,
         {
@@ -243,79 +189,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             persistSession: false,
             autoRefreshToken: false,
             detectSessionInUrl: false,
-            storage: {
-              // Храним только в памяти — никакого localStorage
-              getItem: () => null,
-              setItem: () => {},
-              removeItem: () => {},
-            },
+            storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
           },
         }
       );
 
-      const { data: authData, error } = await tempSupabase.auth.signUp({
+      const { data: authData, error } = await tempClient.auth.signUp({
         email: data.email,
         password: data.password,
-        options: {
-          data: { name: data.name, role: data.role },
-        },
+        options: { data: { name: data.name, role: data.role } },
       });
 
       if (error) {
-        if (error.message.includes('already registered')) {
+        if (error.message.toLowerCase().includes('already registered'))
           return { success: false, error: 'Пользователь с таким email уже существует' };
-        }
-        throw error;
+        return { success: false, error: error.message };
       }
 
-      if (!authData.user) {
-        return { success: false, error: 'Пользователь не создан. Возможно, email уже зарегистрирован.' };
-      }
+      if (!authData.user)
+        return { success: false, error: 'Не удалось создать пользователя.' };
 
-      // Ждём пока триггер создаст профиль (до 3 секунд)
-      let profile: User | null = null;
-      for (let i = 0; i < 6; i++) {
-        await new Promise(r => setTimeout(r, 500));
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
-        if (profileData) {
-          profile = mapProfile(profileData);
-          break;
-        }
-      }
+      // Wait for the DB trigger to create the profile row
+      const profile = await fetchProfileWithRetry(authData.user.id);
 
-      // Обновляем телефон и канал если указаны (профиль уже создан триггером)
-      if (profile && (data.phone || data.preferredChannel)) {
-        const updates: any = {};
-        if (data.phone) updates.phone = data.phone;
-        if (data.preferredChannel) updates.preferred_channel = data.preferredChannel;
-        await supabase.from('profiles').update(updates).eq('id', authData.user.id);
+      if (data.phone || data.preferredChannel) {
+        const extra: any = {};
+        if (data.phone) extra.phone = data.phone;
+        if (data.preferredChannel) extra.preferred_channel = data.preferredChannel;
+        await supabase.from('profiles').update(extra).eq('id', authData.user.id);
       }
 
       await fetchAllUsers();
       return { success: true, user: profile ?? undefined };
     } catch (e: any) {
-      console.error('RegisterUser error:', e);
       return { success: false, error: e.message || 'Ошибка регистрации' };
     }
   };
 
-  const removeUser = async (_id: string): Promise<boolean> => {
-    // Требует Admin API (service_role key) — недоступно с клиента
-    return false;
-  };
+  const removeUser = async (_id: string): Promise<boolean> => false; // requires service_role key
 
   const getAllUsers = (): User[] => allUsersCache;
 
   return (
     <AuthContext.Provider value={{
-      user, isAuthenticated: !!user, isLoading, login, logout, updateUser,
-      registerUser, removeUser, getAllUsers,
+      user, isAuthenticated: !!user, isLoading,
+      login, logout, updateUser, registerUser, removeUser, getAllUsers,
     }}>
-      {!isLoading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

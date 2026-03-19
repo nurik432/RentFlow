@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { Menu, Zap } from 'lucide-react';
+import { Menu, Zap, Loader2 } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
@@ -29,6 +29,28 @@ import PaymentsPage from './pages/tenant/PaymentsPage';
 import TenantChatPage from './pages/tenant/ChatPage';
 import ProfilePage from './pages/tenant/ProfilePage';
 
+// ─── Loading screen shown while Supabase checks the session ─────────────────
+function LoadingScreen() {
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 16, background: 'var(--color-bg)',
+    }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: 'var(--radius-lg)',
+        background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Zap size={24} color="#fff" />
+      </div>
+      <Loader2 size={20} color="var(--color-text-tertiary)"
+        style={{ animation: 'spin 1s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ─── Route guard ─────────────────────────────────────────────────────────────
 function ProtectedRoute({ allowedRole }: { allowedRole?: 'owner' | 'tenant' }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -38,74 +60,71 @@ function ProtectedRoute({ allowedRole }: { allowedRole?: 'owner' | 'tenant' }) {
   return <Outlet />;
 }
 
+// ─── Owner layout (desktop sidebar + mobile drawer) ──────────────────────────
 function OwnerLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-      {/* Mobile Header */}
-      <header className="owner-mobile-header" style={{
-        position: 'sticky', top: 0, zIndex: 80,
-        background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)',
-        padding: '0 24px', height: 'var(--topbar-height)',
-        alignItems: 'center', justifyContent: 'space-between',
-        backdropFilter: 'blur(12px)', backgroundColor: 'rgba(var(--color-surface), 0.9)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={() => setMobileMenuOpen(true)} style={{
-            background: 'none', border: 'none', color: 'var(--color-text)', cursor: 'pointer', padding: 4, display: 'flex'
+    <>
+      {/* Mobile-only top bar */}
+      <header className="owner-mobile-header">
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          style={{ background: 'none', border: 'none', color: 'var(--color-text)', cursor: 'pointer', padding: 4, display: 'flex' }}
+        >
+          <Menu size={24} />
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 'var(--radius-sm)',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <Menu size={24} />
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              <Zap size={16} color="#fff" />
-            </div>
-            <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-text)' }}>RentFlow</span>
+            <Zap size={16} color="#fff" />
           </div>
+          <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-text)' }}>RentFlow</span>
         </div>
+        {/* Placeholder to balance the flex layout */}
+        <div style={{ width: 32 }} />
       </header>
 
-      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
-        <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
-        <main className="app-content">
-          <Outlet />
-        </main>
-      </div>
+      <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
 
-      <style>{`
-        .owner-mobile-header { display: none !important; }
-        @media (max-width: 768px) {
-          .owner-mobile-header { display: flex !important; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function TenantLayout() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-      <TopNav />
-      <main className="app-content no-sidebar" style={{ minHeight: 'calc(100vh - var(--topbar-height))' }}>
+      <main className="app-content">
         <Outlet />
       </main>
-    </div>
+    </>
   );
 }
 
+// ─── Tenant layout ────────────────────────────────────────────────────────────
+function TenantLayout() {
+  return (
+    <>
+      <TopNav />
+      <main className="app-content no-sidebar">
+        <Outlet />
+      </main>
+    </>
+  );
+}
+
+// ─── Routes (must be inside AuthProvider to use useAuth) ─────────────────────
 function AppRoutes() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) return <LoadingScreen />;
 
   return (
     <Routes>
-      <Route path="/login" element={
-        isAuthenticated ? <Navigate to={user?.role === 'owner' ? '/owner' : '/tenant'} replace /> : <LoginPage />
-      } />
+      <Route
+        path="/login"
+        element={
+          isAuthenticated
+            ? <Navigate to={user?.role === 'owner' ? '/owner' : '/tenant'} replace />
+            : <LoginPage />
+        }
+      />
 
       {/* Owner routes */}
       <Route element={<ProtectedRoute allowedRole="owner" />}>
@@ -137,12 +156,17 @@ function AppRoutes() {
         </Route>
       </Route>
 
-      {/* Default redirect */}
-      <Route path="*" element={<Navigate to={isAuthenticated ? (user?.role === 'owner' ? '/owner' : '/tenant') : '/login'} replace />} />
+      <Route
+        path="*"
+        element={
+          <Navigate to={isAuthenticated ? (user?.role === 'owner' ? '/owner' : '/tenant') : '/login'} replace />
+        }
+      />
     </Routes>
   );
 }
 
+// ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <BrowserRouter>
