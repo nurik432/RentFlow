@@ -34,7 +34,7 @@ export default function UsersPage() {
     return true;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
@@ -48,7 +48,7 @@ export default function UsersPage() {
       return;
     }
 
-    const result = registerUser(formData);
+    const result = await registerUser(formData);
     if (result.success) {
       setFormSuccess(`Пользователь ${formData.name} успешно создан`);
       setFormData({ name: '', email: '', phone: '', password: '', role: 'tenant' });
@@ -62,8 +62,8 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (removeUser(id)) {
+  const handleDelete = async (id: string) => {
+    if (await removeUser(id)) {
       refreshUsers();
       setDeleteConfirm(null);
     }

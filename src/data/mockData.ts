@@ -24,19 +24,19 @@ export const mockUsers: User[] = [
 
 export const mockProperties: Property[] = [
   {
-    id: PROP_1_ID, name: '2-комн. кв. на Рудаки', type: 'apartment', address: 'пр. Рудаки, 45, кв. 12, Душанбе',
+    id: PROP_1_ID, ownerId: OWNER_ID, name: '2-комн. кв. на Рудаки', type: 'apartment', address: 'пр. Рудаки, 45, кв. 12, Душанбе',
     description: 'Уютная двухкомнатная квартира в центре города с отличным ремонтом. Полностью меблирована.', 
     photo: '', status: 'rented', monthlyRent: 3500, contractStartDate: '2025-03-01', contractDuration: 12,
     contractStatus: 'signed', tenantId: TENANT_1_ID, paymentDay: 25, meterReadingDay: 28, reminderDaysBefore: 3, createdAt: '2025-02-20'
   },
   {
-    id: PROP_2_ID, name: 'Офис в бизнес-центре', type: 'office', address: 'ул. Айни, 15, офис 302, Душанбе',
+    id: PROP_2_ID, ownerId: OWNER_ID, name: 'Офис в бизнес-центре', type: 'office', address: 'ул. Айни, 15, офис 302, Душанбе',
     description: 'Современный офис площадью 60 м² с кондиционером и интернетом.',
     photo: '', status: 'rented', monthlyRent: 5000, contractStartDate: '2025-06-01', contractDuration: 24,
     contractStatus: 'signed', tenantId: TENANT_2_ID, paymentDay: 1, meterReadingDay: 28, reminderDaysBefore: 5, createdAt: '2025-05-15'
   },
   {
-    id: PROP_3_ID, name: 'Складское помещение', type: 'warehouse', address: 'промзона Гиссар, уч. 8',
+    id: PROP_3_ID, ownerId: OWNER_ID, name: 'Складское помещение', type: 'warehouse', address: 'промзона Гиссар, уч. 8',
     description: 'Склад 200 м² с высокими потолками и удобным подъездом.',
     photo: '', status: 'available', monthlyRent: 8000, contractStartDate: '', contractDuration: 0,
     contractStatus: 'awaiting', paymentDay: 1, meterReadingDay: 28, reminderDaysBefore: 3, createdAt: '2025-09-01'

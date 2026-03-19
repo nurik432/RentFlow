@@ -70,7 +70,7 @@ export default function ProfilePage() {
           </div>
           <div className="form-group">
             <label className="form-label">Валюта</label>
-            <select className="form-select" value={currency} onChange={e => setCurrency(e.target.value)}>
+            <select className="form-select" value={currency} onChange={e => setCurrency(e.target.value as "TJS" | "RUB")}>
               <option value="TJS">TJS (Сомони)</option>
               <option value="RUB">RUB (Рубль)</option>
             </select>

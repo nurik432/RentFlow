@@ -24,6 +24,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null, isAuthenticated: false, isLoading: true,
   login: async () => ({ success: false }),
+  logout: async () => {},
   updateUser: async () => false,
   registerUser: async () => ({ success: false }),
   removeUser: async () => false,
@@ -159,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
     if (!email || !password) return { success: false, error: 'Введите email и пароль' };
 
     loginInProgressRef.current = true;
@@ -182,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchAllUsers();
         return { success: true, role: profile.role };
       }
+      return { success: false, error: 'Профиль не найден' };
     } catch (e: any) {
       console.error('Login error:', e);
       return { success: false, error: e.message || 'Ошибка входа' };
