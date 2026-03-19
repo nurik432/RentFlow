@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Menu, Zap } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
@@ -38,13 +39,51 @@ function ProtectedRoute({ allowedRole }: { allowedRole?: 'owner' | 'tenant' }) {
 }
 
 function OwnerLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <>
-      <Sidebar />
-      <main className="app-content">
-        <Outlet />
-      </main>
-    </>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      {/* Mobile Header */}
+      <header className="owner-mobile-header" style={{
+        position: 'sticky', top: 0, zIndex: 80,
+        background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)',
+        padding: '0 24px', height: 'var(--topbar-height)',
+        alignItems: 'center', justifyContent: 'space-between',
+        backdropFilter: 'blur(12px)', backgroundColor: 'rgba(var(--color-surface), 0.9)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button onClick={() => setMobileMenuOpen(true)} style={{
+            background: 'none', border: 'none', color: 'var(--color-text)', cursor: 'pointer', padding: 4, display: 'flex'
+          }}>
+            <Menu size={24} />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 'var(--radius-sm)',
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <Zap size={16} color="#fff" />
+            </div>
+            <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-text)' }}>RentFlow</span>
+          </div>
+        </div>
+      </header>
+
+      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        <main className="app-content">
+          <Outlet />
+        </main>
+      </div>
+
+      <style>{`
+        .owner-mobile-header { display: none !important; }
+        @media (max-width: 768px) {
+          .owner-mobile-header { display: flex !important; }
+        }
+      `}</style>
+    </div>
   );
 }
 

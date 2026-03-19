@@ -21,7 +21,7 @@ const navItems = [
   { path: '/owner/users', icon: Users, label: 'Пользователи' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ mobileOpen = false, onClose = () => {} }: { mobileOpen?: boolean; onClose?: () => void }) {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -33,11 +33,21 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="sidebar" style={{
+      {mobileOpen && (
+        <div 
+          onClick={onClose}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', 
+            zIndex: 90, backdropFilter: 'blur(2px)', animation: 'fadeIn 0.2s ease'
+          }}
+        />
+      )}
+      
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`} style={{
         width: collapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)',
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 100,
         background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)',
-        display: 'flex', flexDirection: 'column', transition: 'width var(--transition-slow)',
+        display: 'flex', flexDirection: 'column', transition: 'all var(--transition-slow)',
         overflow: 'hidden'
       }}>
         {/* Logo */}
@@ -66,6 +76,7 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               end={item.path === '/owner'}
+              onClick={() => { if (mobileOpen) onClose(); }}
               style={({ isActive }) => ({
                 display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px',
                 borderRadius: 'var(--radius-md)', marginBottom: '2px',
@@ -109,7 +120,7 @@ export default function Sidebar() {
         </div>
 
         {/* Collapse toggle */}
-        <button onClick={() => setCollapsed(!collapsed)} style={{
+        <button onClick={() => setCollapsed(!collapsed)} className="desktop-only" style={{
           position: 'absolute', top: 24, right: -14, width: 28, height: 28,
           borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border)',
           background: 'var(--color-surface)', display: 'flex', alignItems: 'center',
@@ -120,10 +131,18 @@ export default function Sidebar() {
         </button>
       </aside>
 
-      {/* Mobile overlay and bottom nav handled through CSS */}
       <style>{`
         @media (max-width: 768px) {
-          .sidebar { display: none !important; }
+          .sidebar {
+            transform: translateX(-100%);
+            width: var(--sidebar-width) !important;
+          }
+          .sidebar.mobile-open {
+            transform: translateX(0);
+          }
+          .desktop-only {
+            display: none !important;
+          }
         }
       `}</style>
     </>
