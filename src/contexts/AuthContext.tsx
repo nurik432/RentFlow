@@ -24,6 +24,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null, isAuthenticated: false, isLoading: true,
   login: async () => ({ success: false }),
+  logout: async () => {},
   updateUser: async () => false,
   registerUser: async () => ({ success: false }),
   removeUser: async () => false,
@@ -167,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; role?: UserRole }> => {
     if (!email || !password) return { success: false, error: 'Введите email и пароль' };
 
     loginInProgressRef.current = true;
@@ -189,6 +190,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(profile);
         await fetchAllUsers();
         return { success: true, role: profile.role };
+      } else {
+        await supabase.auth.signOut();
+        return { success: false, error: 'Профиль не найден. Убедитесь что триггер handle_new_user создан в Supabase.' };
       }
     } catch (e: any) {
       console.error('Login error:', e);
