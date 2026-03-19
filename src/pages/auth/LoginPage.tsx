@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Mail, Lock, Zap, ArrowRight, Eye, EyeOff, AlertCircle, User as UserIcon } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,7 +11,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  // registerUser uses a temp client with persistSession: false — safe for owner creating tenants too
+  const { login, registerUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,8 +27,8 @@ export default function LoginPage() {
       setError('Введите email');
       return;
     }
-    if (!password.trim()) {
-      setError('Введите пароль');
+    if (password.trim().length < 6) {
+      setError('Пароль минимум 6 символов');
       return;
     }
 
@@ -39,40 +39,45 @@ export default function LoginPage() {
         const result = await login(email, password);
         if (!result.success) {
           setError(result.error || 'Ошибка входа');
+        } else {
+          // Используем роль из результата — user state может ещё не обновиться
+          const destination = result.role === 'tenant' ? '/tenant' : '/owner';
+          navigate(destination, { replace: true });
         }
-        // If success, do nothing. AuthContext will update 'user' state, 
-        // causing AppRoutes to re-render and trigger a <Navigate> component.
       } else {
-        // Registration Flow
-        const { data, error: authError } = await supabase.auth.signUp({
-          email,
+        // Используем registerUser из AuthContext:
+        // — создаёт temp-клиент с persistSession: false
+        // — не трогает сессию текущего пользователя / не вызывает onAuthStateChange на основном клиенте
+        // — ждёт пока триггер БД создаст профиль
+        const regResult = await registerUser({
+          name: name.trim(),
+          email: email.trim(),
           password,
-          options: {
-            data: {
-              name: name,
-              role: 'owner'
-            }
-          }
+          role: 'owner',
         });
 
-        if (authError) throw authError;
+        if (!regResult.success) {
+          setError(regResult.error || 'Ошибка регистрации');
+          return;
+        }
 
-        if (data.user) {
-          // Instead of inserting into profiles manually (which fails RLS because email isn't confirmed yet),
-          // we rely on a Supabase database trigger to create the profile.
-          
-          // Try to login correctly
-          const result = await login(email, password);
-          if (!result.success) {
-            setError('Аккаунт создан! Если вход не выполнен, проверьте email для подтверждения, либо отключите "Confirm email" в настройках Supabase.');
-            setIsLogin(true);
-          }
-          // If success, AppRoutes will redirect automatically.
+        // После успешной регистрации — входим
+        const loginResult = await login(email, password);
+        if (!loginResult.success) {
+          // Аккаунт создан, но войти не удалось (напр. email не подтверждён)
+          setError(
+            loginResult.error?.includes('не подтверждён')
+              ? 'Аккаунт создан! Проверьте email для подтверждения или отключите «Confirm email» в настройках Supabase.'
+              : loginResult.error || 'Аккаунт создан. Войдите вручную.'
+          );
+          setIsLogin(true);
+        } else {
+          navigate('/owner', { replace: true });
         }
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Ошибка: возможно пользователь уже существует');
+      setError(err.message || 'Неизвестная ошибка');
     } finally {
       setLoading(false);
     }
@@ -108,20 +113,20 @@ export default function LoginPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', marginBottom: '24px', background: 'var(--color-surface-hover)', borderRadius: 'var(--radius-md)', padding: '4px' }}>
-          <button 
+          <button
             type="button"
             onClick={() => { setIsLogin(true); setError(''); }}
-            style={{ 
+            style={{
               flex: 1, padding: '8px', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
               background: isLogin ? 'var(--color-surface)' : 'transparent',
               color: isLogin ? 'var(--color-text)' : 'var(--color-text-secondary)',
               fontWeight: isLogin ? 600 : 400,
               boxShadow: isLogin ? 'var(--shadow-sm)' : 'none'
             }}>Вход</button>
-          <button 
+          <button
             type="button"
             onClick={() => { setIsLogin(false); setError(''); }}
-            style={{ 
+            style={{
               flex: 1, padding: '8px', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
               background: !isLogin ? 'var(--color-surface)' : 'transparent',
               color: !isLogin ? 'var(--color-text)' : 'var(--color-text-secondary)',

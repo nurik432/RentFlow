@@ -50,12 +50,12 @@ function OwnerLayout() {
 
 function TenantLayout() {
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
       <TopNav />
-      <main className="app-content no-sidebar">
+      <main className="app-content no-sidebar" style={{ minHeight: 'calc(100vh - var(--topbar-height))' }}>
         <Outlet />
       </main>
-    </>
+    </div>
   );
 }
 
