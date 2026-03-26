@@ -2,15 +2,19 @@ import React from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatMonth, formatDate, getStatusLabel, getStatusColor } from '../../utils/helpers';
-import { CreditCard, Check } from 'lucide-react';
+import { CreditCard, Check, CheckCircle } from 'lucide-react';
 
 export default function PaymentsPage() {
-  const { payments, utilityBills, acknowledgeUtilityBill, properties } = useData();
+  const { payments, utilityBills, acknowledgeUtilityBill, properties, updatePayment } = useData();
   const { user } = useAuth();
 
   const myPayments = payments.filter(p => p.tenantId === user?.id).sort((a, b) => b.month.localeCompare(a.month));
   const myBills = utilityBills.filter(b => b.tenantId === user?.id).sort((a, b) => b.month.localeCompare(a.month));
   const myProperty = properties.find(p => p.tenantId === user?.id);
+
+  const handleMarkPaid = (paymentId: string) => {
+    updatePayment(paymentId, { status: 'received', paidAt: new Date().toISOString() });
+  };
 
   return (
     <div className="page-container animate-fade-in">
@@ -23,7 +27,7 @@ export default function PaymentsPage() {
       {myPayments.length > 0 ? (
         <div className="table-container mb-lg">
           <table className="table">
-            <thead><tr><th>Месяц</th><th>Сумма</th><th>Статус</th><th>Дата оплаты</th></tr></thead>
+            <thead><tr><th>Месяц</th><th>Сумма</th><th>Статус</th><th>Дата оплаты</th><th></th></tr></thead>
             <tbody>
               {myPayments.map(p => (
                 <tr key={p.id}>
@@ -31,6 +35,13 @@ export default function PaymentsPage() {
                   <td style={{ fontWeight: 500 }}>{formatCurrency(p.amount, user?.currency)}</td>
                   <td><span className={`badge badge-${getStatusColor(p.status)}`}>{getStatusLabel(p.status)}</span></td>
                   <td>{p.paidAt ? formatDate(p.paidAt) : '—'}</td>
+                  <td>
+                    {(p.status === 'pending' || p.status === 'overdue') && (
+                      <button className="btn btn-success btn-sm" onClick={() => handleMarkPaid(p.id)}>
+                        <CheckCircle size={14} /> Оплачено
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

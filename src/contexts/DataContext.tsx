@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { Property, Payment, UtilityBill, MeterReading, AppNotification, ChatMessage, PropertyTask } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
@@ -18,6 +18,7 @@ interface DataContextType {
   addPayment: (p: Omit<Payment, 'id' | 'createdAt'>) => Promise<void>;
   updatePayment: (id: string, updates: Partial<Payment>) => Promise<void>;
   addUtilityBill: (b: Omit<UtilityBill, 'id' | 'createdAt'>) => Promise<void>;
+  updateUtilityBill: (id: string, updates: Partial<UtilityBill>) => Promise<void>;
   acknowledgeUtilityBill: (id: string) => Promise<void>;
   addMeterReading: (r: Omit<MeterReading, 'id'>) => Promise<void>;
   addNotification: (n: Omit<AppNotification, 'id' | 'createdAt'>) => Promise<void>;
@@ -29,6 +30,7 @@ interface DataContextType {
   deleteTask: (id: string) => Promise<void>;
   getTenantName: (tenantId: string) => string;
   getPropertyName: (propertyId: string) => string;
+  refetchData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType>({} as DataContextType);
@@ -148,6 +150,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
     fetchAllData();
   }, [user]);
 
+  // Supabase Realtime: re-fetch data when relevant tables change
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('data-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => { fetchAllData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => { fetchAllData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'utility_bills' }, () => { fetchAllData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'meter_readings' }, () => { fetchAllData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { fetchAllData(); })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const addProperty = async (p: Omit<Property, 'id' | 'createdAt'>) => {
     const dbObj = mapToSnakeCase(p);
     const { data, error } = await supabase.from('properties').insert(dbObj).select().single();
@@ -239,6 +259,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         read: false,
         propertyId: b.propertyId
       });
+    }
+  };
+
+  const updateUtilityBill = async (id: string, updates: Partial<UtilityBill>) => {
+    const dbObj = mapToSnakeCase(updates);
+    const { error } = await supabase.from('utility_bills').update(dbObj).eq('id', id);
+    if (!error) {
+      setUtilityBills(utilityBills.map(b => b.id === id ? { ...b, ...updates } : b));
     }
   };
 
@@ -334,14 +362,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || 'Объект';
 
+  const refetchData = fetchAllData;
+
   return (
     <DataContext.Provider value={{
       properties, payments, utilityBills, meterReadings, notifications, chatMessages, tasks, isLoading,
       addProperty, updateProperty, deleteProperty, addPayment, updatePayment,
-      addUtilityBill, acknowledgeUtilityBill, addMeterReading,
+      addUtilityBill, updateUtilityBill, acknowledgeUtilityBill, addMeterReading,
       addNotification, markNotificationRead, markAllNotificationsRead,
       addChatMessage, addTask, updateTask, deleteTask,
-      getTenantName, getPropertyName
+      getTenantName, getPropertyName, refetchData
     }}>
       {children}
     </DataContext.Provider>
