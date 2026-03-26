@@ -108,39 +108,75 @@ export default function PropertyDetailPage() {
       )}
 
       {activeTab === 'payments' && (
-        <div className="card">
-          {propPayments.length > 0 ? (
-            <div className="table-container" style={{ border: 'none' }}>
-              <table className="table">
-                <thead><tr><th>Месяц</th><th>Тип</th><th>Сумма</th><th>Статус</th><th>Дата оплаты</th><th>Действие</th></tr></thead>
-                <tbody>
-                  {propPayments.map(p => (
-                    <tr key={p.id}>
-                      <td>{formatMonth(p.month)}</td>
-                      <td>{p.type === 'rent' ? 'Аренда' : 'Коммуналка'}</td>
-                      <td style={{ fontWeight: 500 }}>{formatCurrency(p.amount, user?.currency)}</td>
-                      <td><span className={`badge badge-${getStatusColor(p.status)}`}>{getStatusLabel(p.status)}</span></td>
-                      <td>{p.paidAt ? formatDate(p.paidAt) : '—'}</td>
-                      <td>
-                        <select
-                          className="form-select"
-                          value={p.status}
-                          onChange={e => handleChangePaymentStatus(p.id, e.target.value as PaymentStatus)}
-                          style={{ fontSize: '0.8rem', padding: '4px 8px', width: 'auto', minWidth: '120px' }}
-                        >
-                          <option value="pending">Ожидается</option>
-                          <option value="received">Получен</option>
-                          <option value="overdue">Просрочен</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="empty-state"><h3>Нет платежей</h3><p>История платежей появится здесь</p></div>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Rent payments */}
+          <div className="card">
+            <h3 className="card-title" style={{ marginBottom: '16px' }}>Арендная плата</h3>
+            {propPayments.length > 0 ? (
+              <div className="table-container" style={{ border: 'none' }}>
+                <table className="table">
+                  <thead><tr><th>Месяц</th><th>Сумма</th><th>Статус</th><th>Дата оплаты</th><th>Действие</th></tr></thead>
+                  <tbody>
+                    {propPayments.map(p => (
+                      <tr key={p.id}>
+                        <td>{formatMonth(p.month)}</td>
+                        <td style={{ fontWeight: 500 }}>{formatCurrency(p.amount, user?.currency)}</td>
+                        <td><span className={`badge badge-${getStatusColor(p.status)}`}>{getStatusLabel(p.status)}</span></td>
+                        <td>{p.paidAt ? formatDate(p.paidAt) : '—'}</td>
+                        <td>
+                          <select
+                            className="form-select"
+                            value={p.status}
+                            onChange={e => handleChangePaymentStatus(p.id, e.target.value as PaymentStatus)}
+                            style={{ fontSize: '0.8rem', padding: '4px 8px', width: 'auto', minWidth: '120px' }}
+                          >
+                            <option value="pending">Ожидается</option>
+                            <option value="received">Получен</option>
+                            <option value="overdue">Просрочен</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-state"><h3>Нет платежей</h3><p>История арендных платежей появится здесь</p></div>
+            )}
+          </div>
+
+          {/* Utility bills */}
+          <div className="card">
+            <h3 className="card-title" style={{ marginBottom: '16px' }}>Коммунальные платежи</h3>
+            {propBills.length > 0 ? (
+              <div className="table-container" style={{ border: 'none' }}>
+                <table className="table">
+                  <thead><tr><th>Месяц</th><th>Электро</th><th>Хол. вода</th><th>Гор. вода</th><th>Газ</th><th>Итого</th><th>Статус</th></tr></thead>
+                  <tbody>
+                    {propBills.map(bill => (
+                      <tr key={bill.id}>
+                        <td>{formatMonth(bill.month)}</td>
+                        <td>{bill.electricity ? formatCurrency(bill.electricity, user?.currency) : '—'}</td>
+                        <td>{bill.coldWater ? formatCurrency(bill.coldWater, user?.currency) : '—'}</td>
+                        <td>{bill.hotWater ? formatCurrency(bill.hotWater, user?.currency) : '—'}</td>
+                        <td>{bill.gas ? formatCurrency(bill.gas, user?.currency) : '—'}</td>
+                        <td style={{ fontWeight: 600 }}>{formatCurrency(bill.total, user?.currency)}</td>
+                        <td>
+                          {bill.acknowledged ? (
+                            <span className="badge badge-success">Подтверждено</span>
+                          ) : (
+                            <span className="badge badge-warning">Ожидает</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-state"><h3>Нет начислений</h3><p>Коммунальные начисления появятся здесь</p></div>
+            )}
+          </div>
         </div>
       )}
 
