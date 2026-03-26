@@ -60,6 +60,40 @@ const mapToSnakeCase = (obj: any) => {
   return newObj;
 };
 
+// Special mapper: DB flat columns → nested MeterReading type
+const mapMeterReadingFromDb = (row: any): any => {
+  const base = mapToCamelCase(row);
+  // Group consumption_* fields into a nested object
+  base.consumption = {
+    coldWater: row.consumption_cold_water ?? undefined,
+    hotWater: row.consumption_hot_water ?? undefined,
+    electricityDay: row.consumption_electricity_day ?? undefined,
+    electricityNight: row.consumption_electricity_night ?? undefined,
+    gas: row.consumption_gas ?? undefined,
+  };
+  // Remove flat consumption keys
+  delete base.consumptionColdWater;
+  delete base.consumptionHotWater;
+  delete base.consumptionElectricityDay;
+  delete base.consumptionElectricityNight;
+  delete base.consumptionGas;
+  return base;
+};
+
+// Special mapper: nested MeterReading type → DB flat columns
+const mapMeterReadingToDb = (r: any): any => {
+  const { consumption, ...rest } = r;
+  const dbObj = mapToSnakeCase(rest);
+  if (consumption) {
+    dbObj.consumption_cold_water = consumption.coldWater ?? null;
+    dbObj.consumption_hot_water = consumption.hotWater ?? null;
+    dbObj.consumption_electricity_day = consumption.electricityDay ?? null;
+    dbObj.consumption_electricity_night = consumption.electricityNight ?? null;
+    dbObj.consumption_gas = consumption.gas ?? null;
+  }
+  return dbObj;
+};
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user, getAllUsers } = useAuth();
   
@@ -135,7 +169,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       setPayments((results[0].data || []).map(mapToCamelCase));
       setUtilityBills((results[1].data || []).map(mapToCamelCase));
-      setMeterReadings((results[2].data || []).map(mapToCamelCase));
+      setMeterReadings((results[2].data || []).map(mapMeterReadingFromDb));
       setNotifications((results[3].data || []).map(mapToCamelCase));
       setChatMessages((results[4].data || []).map(mapToCamelCase));
       setTasks((results[5].data || []).map(mapToCamelCase));
@@ -278,11 +312,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addMeterReading = async (r: Omit<MeterReading, 'id'>) => {
-    const dbObj = mapToSnakeCase(r);
+    const dbObj = mapMeterReadingToDb(r);
     const { data, error } = await supabase.from('meter_readings').insert(dbObj).select().single();
     
     if (!error && data) {
-      setMeterReadings([...meterReadings, mapToCamelCase(data)]);
+      setMeterReadings([...meterReadings, mapMeterReadingFromDb(data)]);
       
       // Select the property's owner ID
       const prop = properties.find(p => p.id === r.propertyId);
