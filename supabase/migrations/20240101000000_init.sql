@@ -105,6 +105,7 @@ create table public.messages (
   id uuid default uuid_generate_v4() primary key,
   property_id uuid references public.properties(id) on delete cascade not null,
   sender_id uuid references public.profiles(id) on delete cascade not null,
+  sender_name text,
   message text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

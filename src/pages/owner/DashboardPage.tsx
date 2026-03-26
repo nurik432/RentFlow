@@ -18,7 +18,7 @@ import { monthlyRevenue } from '../../data/mockData';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function DashboardPage() {
-  const { properties, payments, utilityBills, notifications, meterReadings } = useData();
+  const { properties, payments, utilityBills, notifications, meterReadings, getTenantName } = useData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const currentMonth = getMonthKey();
@@ -185,7 +185,7 @@ export default function DashboardPage() {
                 const payment = payments.find(p => p.propertyId === prop.id && p.month === currentMonth);
                 const utility = utilityBills.find(u => u.propertyId === prop.id && u.month === currentMonth);
                 const meter = meterReadings.find(m => m.propertyId === prop.id && m.month === currentMonth);
-                const tenantName = prop.tenantId ? (prop.tenantId === 'tenant-1' ? 'Мария Петрова' : 'Дмитрий Сидоров') : '—';
+                const tenantName = prop.tenantId ? getTenantName(prop.tenantId) : '—';
                 return (
                   <tr key={prop.id} onClick={() => navigate(`/owner/properties/${prop.id}`)} style={{ cursor: 'pointer' }}>
                     <td style={{ fontWeight: 500 }}>{prop.name}</td>

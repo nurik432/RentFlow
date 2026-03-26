@@ -86,23 +86,57 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
+      const isOwner = user.role === 'owner';
+
+      // 1. Load properties scoped by role
+      let propsQuery = supabase.from('properties').select('*');
+      if (isOwner) {
+        propsQuery = propsQuery.eq('owner_id', user.id);
+      } else {
+        propsQuery = propsQuery.eq('tenant_id', user.id);
+      }
+      const { data: propsData } = await propsQuery;
+      const loadedProps: Property[] = (propsData || []).map(mapToCamelCase);
+      setProperties(loadedProps);
+
+      const propIds = loadedProps.map(p => p.id);
+
+      // 2. Load remaining data scoped to those properties
+      let paymentsQuery, billsQuery, readingsQuery, messagesQuery, tasksQuery;
+
+      if (propIds.length > 0) {
+        paymentsQuery = supabase.from('payments').select('*').in('property_id', propIds);
+        billsQuery = supabase.from('utility_bills').select('*').in('property_id', propIds);
+        readingsQuery = supabase.from('meter_readings').select('*').in('property_id', propIds);
+        messagesQuery = supabase.from('messages').select('*').in('property_id', propIds).order('created_at', { ascending: true });
+        tasksQuery = supabase.from('tasks').select('*').in('property_id', propIds);
+      } else {
+        // No properties — empty results
+        paymentsQuery = supabase.from('payments').select('*').eq('property_id', 'none');
+        billsQuery = supabase.from('utility_bills').select('*').eq('property_id', 'none');
+        readingsQuery = supabase.from('meter_readings').select('*').eq('property_id', 'none');
+        messagesQuery = supabase.from('messages').select('*').eq('property_id', 'none');
+        tasksQuery = supabase.from('tasks').select('*').eq('property_id', 'none');
+      }
+
+      // Notifications always scoped to current user
+      const notifsQuery = supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+
       const results = await Promise.all([
-        supabase.from('properties').select('*'),
-        supabase.from('payments').select('*'),
-        supabase.from('utility_bills').select('*'),
-        supabase.from('meter_readings').select('*'),
-        supabase.from('notifications').select('*').order('created_at', { ascending: false }),
-        supabase.from('messages').select('*').order('created_at', { ascending: true }),
-        supabase.from('tasks').select('*')
+        paymentsQuery,
+        billsQuery,
+        readingsQuery,
+        notifsQuery,
+        messagesQuery,
+        tasksQuery
       ]);
 
-      setProperties((results[0].data || []).map(mapToCamelCase));
-      setPayments((results[1].data || []).map(mapToCamelCase));
-      setUtilityBills((results[2].data || []).map(mapToCamelCase));
-      setMeterReadings((results[3].data || []).map(mapToCamelCase));
-      setNotifications((results[4].data || []).map(mapToCamelCase));
-      setChatMessages((results[5].data || []).map(mapToCamelCase));
-      setTasks((results[6].data || []).map(mapToCamelCase));
+      setPayments((results[0].data || []).map(mapToCamelCase));
+      setUtilityBills((results[1].data || []).map(mapToCamelCase));
+      setMeterReadings((results[2].data || []).map(mapToCamelCase));
+      setNotifications((results[3].data || []).map(mapToCamelCase));
+      setChatMessages((results[4].data || []).map(mapToCamelCase));
+      setTasks((results[5].data || []).map(mapToCamelCase));
     } catch (e) {
       console.error('Error fetching data:', e);
     } finally {
@@ -142,6 +176,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.from('payments').insert(dbObj).select().single();
     if (!error && data) {
       setPayments([...payments, mapToCamelCase(data)]);
+
+      // Auto-notify tenant about new payment
+      const prop = properties.find(pr => pr.id === p.propertyId);
+      const typeLabel = p.type === 'rent' ? 'аренду' : 'коммунальные услуги';
+      await addNotification({
+        userId: p.tenantId,
+        title: 'Начисление',
+        message: `Начислена оплата за ${typeLabel} за ${p.month}: ${p.amount} TJS.${prop ? ' Объект: ' + prop.name : ''}`,
+        type: 'payment_reminder',
+        channel: 'inapp',
+        read: false,
+        propertyId: p.propertyId
+      });
     }
   };
 
@@ -149,7 +196,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const dbObj = mapToSnakeCase(updates);
     const { error } = await supabase.from('payments').update(dbObj).eq('id', id);
     if (!error) {
-      setPayments(payments.map(p => p.id === id ? { ...p, ...updates } : p));
+      const updatedPayments = payments.map(p => p.id === id ? { ...p, ...updates } : p);
+      setPayments(updatedPayments);
+
+      // Auto-notify owner when payment is confirmed as received
+      if (updates.status === 'received') {
+        const payment = payments.find(p => p.id === id);
+        if (payment) {
+          const prop = properties.find(pr => pr.id === payment.propertyId);
+          if (prop) {
+            const tenantName = getTenantName(payment.tenantId);
+            const typeLabel = payment.type === 'rent' ? 'аренду' : 'коммуналку';
+            await addNotification({
+              userId: prop.ownerId,
+              title: 'Оплата получена',
+              message: `${tenantName} оплатил ${typeLabel} за ${payment.month}: ${payment.amount} TJS.`,
+              type: 'payment_received',
+              channel: 'inapp',
+              read: false,
+              propertyId: payment.propertyId
+            });
+          }
+        }
+      }
     }
   };
 

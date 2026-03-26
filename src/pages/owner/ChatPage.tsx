@@ -6,10 +6,23 @@ import { Send, MessageSquare } from 'lucide-react';
 export default function ChatPage() {
   const { properties, chatMessages, addChatMessage } = useData();
   const { user } = useAuth();
-  const [selectedProp, setSelectedProp] = useState(properties.find(p => p.status === 'rented')?.id || '');
+  const isOwner = user?.role === 'owner';
+
+  // For tenant: auto-select their property; for owner: allow choosing from rented properties
+  const myProperty = !isOwner ? properties.find(p => p.tenantId === user?.id) : null;
+  const rentedProps = properties.filter(p => p.status === 'rented');
+  const [selectedProp, setSelectedProp] = useState(myProperty?.id || rentedProps[0]?.id || '');
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isOwner = user?.role === 'owner';
+
+  // Update selectedProp when properties load (for tenant)
+  React.useEffect(() => {
+    if (!isOwner && myProperty && selectedProp !== myProperty.id) {
+      setSelectedProp(myProperty.id);
+    } else if (isOwner && !selectedProp && rentedProps.length > 0) {
+      setSelectedProp(rentedProps[0].id);
+    }
+  }, [properties]);
 
   const filteredMessages = chatMessages
     .filter(m => m.propertyId === selectedProp)
@@ -33,8 +46,6 @@ export default function ChatPage() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
-
-  const rentedProps = properties.filter(p => p.status === 'rented');
 
   return (
     <div className="page-container animate-fade-in">
