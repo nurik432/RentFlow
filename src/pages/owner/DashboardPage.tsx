@@ -170,19 +170,20 @@ export default function DashboardPage() {
         </div>
         <div className="table-container" style={{ border: 'none' }}>
           <table className="table">
-            <thead>
+             <thead>
               <tr>
                 <th>Объект</th>
                 <th>Арендатор</th>
                 <th>Аренда</th>
                 <th>Коммуналка</th>
-                <th>Статус оплаты</th>
+                <th>Статус аренды</th>
+                <th>Статус ком-ки</th>
                 <th>Показания</th>
               </tr>
             </thead>
             <tbody>
               {rentedProps.map(prop => {
-                const payment = payments.find(p => p.propertyId === prop.id && p.month === currentMonth);
+                const payment = payments.find(p => p.propertyId === prop.id && p.month === currentMonth && p.type === 'rent');
                 const utility = utilityBills.find(u => u.propertyId === prop.id && u.month === currentMonth);
                 const meter = meterReadings.find(m => m.propertyId === prop.id && m.month === currentMonth);
                 const tenantName = prop.tenantId ? getTenantName(prop.tenantId) : '—';
@@ -194,8 +195,19 @@ export default function DashboardPage() {
                     <td>{utility ? formatCurrency(utility.total, user?.currency) : '—'}</td>
                     <td>
                       <span className={`badge badge-${payment?.status === 'received' ? 'success' : payment?.status === 'overdue' ? 'error' : 'warning'}`}>
-                        {payment?.status === 'received' ? 'Получен' : payment?.status === 'overdue' ? 'Просрочен' : 'Ожидается'}
+                        {payment?.status === 'received' ? 'Получен' : payment?.status === 'overdue' ? 'Просрочен' : payment ? 'Ожидается' : 'Нет счёта'}
                       </span>
+                    </td>
+                    <td>
+                      {utility ? (
+                        utility.acknowledged ? (
+                          <span className="badge badge-success">Оплачено</span>
+                        ) : (
+                          <span className="badge badge-warning">К оплате</span>
+                        )
+                      ) : (
+                        <span className="badge badge-neutral">Нет счёта</span>
+                      )}
                     </td>
                     <td>
                       {meter ? (

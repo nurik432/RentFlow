@@ -22,10 +22,11 @@ import NotificationsPage from './pages/owner/NotificationsPage';
 import OwnerChatPage from './pages/owner/ChatPage';
 import TasksPage from './pages/owner/TasksPage';
 import UsersPage from './pages/owner/UsersPage';
+import OwnerPaymentsPage from './pages/owner/PaymentsPage';
 
 import TenantDashboardPage from './pages/tenant/TenantDashboardPage';
 import MeterReadingsPage from './pages/tenant/MeterReadingsPage';
-import PaymentsPage from './pages/tenant/PaymentsPage';
+import TenantPaymentsPage from './pages/tenant/PaymentsPage';
 import TenantChatPage from './pages/tenant/ChatPage';
 import ProfilePage from './pages/tenant/ProfilePage';
 
@@ -106,6 +107,7 @@ function AppRoutes() {
           <Route path="/owner/properties/:id" element={<PropertyDetailPage />} />
           <Route path="/owner/properties/:id/edit" element={<PropertyFormPage />} />
           <Route path="/owner/utilities" element={<UtilitiesPage />} />
+          <Route path="/owner/payments" element={<OwnerPaymentsPage />} />
           <Route path="/owner/calendar" element={<CalendarPage />} />
           <Route path="/owner/analytics" element={<AnalyticsPage />} />
           <Route path="/owner/notifications" element={<NotificationsPage />} />
@@ -120,7 +122,7 @@ function AppRoutes() {
         <Route element={<TenantLayout />}>
           <Route path="/tenant" element={<TenantDashboardPage />} />
           <Route path="/tenant/meters" element={<MeterReadingsPage />} />
-          <Route path="/tenant/payments" element={<PaymentsPage />} />
+          <Route path="/tenant/payments" element={<TenantPaymentsPage />} />
           <Route path="/tenant/chat" element={<TenantChatPage />} />
           <Route path="/tenant/profile" element={<ProfilePage />} />
         </Route>

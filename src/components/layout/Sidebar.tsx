@@ -5,13 +5,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useData } from '../../contexts/DataContext';
 import {
   LayoutDashboard, Building2, Receipt, CalendarDays, BarChart3,
-  Bell, MessageSquare, ClipboardList, Users,
+  Bell, MessageSquare, ClipboardList, Users, CreditCard,
   Sun, Moon, LogOut, Menu, X, Zap,
 } from 'lucide-react';
 
 const navItems = [
   { path: '/owner',                icon: LayoutDashboard, label: 'Дашборд'     },
   { path: '/owner/properties',     icon: Building2,       label: 'Объекты'      },
+  { path: '/owner/payments',       icon: CreditCard,      label: 'Платежи'      },
   { path: '/owner/utilities',      icon: Receipt,         label: 'Коммуналка'   },
   { path: '/owner/calendar',       icon: CalendarDays,    label: 'Календарь'    },
   { path: '/owner/analytics',      icon: BarChart3,       label: 'Аналитика'    },
