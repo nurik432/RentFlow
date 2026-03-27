@@ -63,20 +63,16 @@ const mapToSnakeCase = (obj: any) => {
 // Special mapper: DB flat columns → nested MeterReading type
 const mapMeterReadingFromDb = (row: any): any => {
   const base = mapToCamelCase(row);
-  // Group consumption_* fields into a nested object
   base.consumption = {
     coldWater: row.consumption_cold_water ?? undefined,
     hotWater: row.consumption_hot_water ?? undefined,
-    electricityDay: row.consumption_electricity_day ?? undefined,
-    electricityNight: row.consumption_electricity_night ?? undefined,
-    gas: row.consumption_gas ?? undefined,
+    electricity: row.consumption_electricity ?? undefined,
+    sewage: row.consumption_sewage ?? undefined,
   };
-  // Remove flat consumption keys
   delete base.consumptionColdWater;
   delete base.consumptionHotWater;
-  delete base.consumptionElectricityDay;
-  delete base.consumptionElectricityNight;
-  delete base.consumptionGas;
+  delete base.consumptionElectricity;
+  delete base.consumptionSewage;
   return base;
 };
 
@@ -87,9 +83,8 @@ const mapMeterReadingToDb = (r: any): any => {
   if (consumption) {
     dbObj.consumption_cold_water = consumption.coldWater ?? null;
     dbObj.consumption_hot_water = consumption.hotWater ?? null;
-    dbObj.consumption_electricity_day = consumption.electricityDay ?? null;
-    dbObj.consumption_electricity_night = consumption.electricityNight ?? null;
-    dbObj.consumption_gas = consumption.gas ?? null;
+    dbObj.consumption_electricity = consumption.electricity ?? null;
+    dbObj.consumption_sewage = consumption.sewage ?? null;
   }
   return dbObj;
 };

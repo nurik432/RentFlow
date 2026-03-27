@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatMonth, getMonthKey } from '../../utils/helpers';
-import { Send, Upload, Gauge, Check, Camera } from 'lucide-react';
+import { Send, Gauge, Check, Camera } from 'lucide-react';
 
 export default function MeterReadingsPage() {
   const { properties, meterReadings, addMeterReading } = useData();
@@ -17,7 +17,7 @@ export default function MeterReadingsPage() {
   const currentReading = meterReadings.find(m => m.tenantId === user?.id && m.month === currentMonth);
 
   const [form, setForm] = useState({
-    coldWater: '', hotWater: '', electricityDay: '', electricityNight: '', gas: '', photo: ''
+    coldWater: '', hotWater: '', electricity: '', sewage: '', photo: ''
   });
   const [submitted, setSubmitted] = useState(!!currentReading);
 
@@ -28,17 +28,15 @@ export default function MeterReadingsPage() {
     const current = {
       coldWater: +form.coldWater || undefined,
       hotWater: +form.hotWater || undefined,
-      electricityDay: +form.electricityDay || undefined,
-      electricityNight: +form.electricityNight || undefined,
-      gas: +form.gas || undefined,
+      electricity: +form.electricity || undefined,
+      sewage: +form.sewage || undefined,
     };
 
     const consumption = {
       coldWater: current.coldWater && lastReading?.coldWater ? current.coldWater - lastReading.coldWater : undefined,
       hotWater: current.hotWater && lastReading?.hotWater ? current.hotWater - lastReading.hotWater : undefined,
-      electricityDay: current.electricityDay && lastReading?.electricityDay ? current.electricityDay - lastReading.electricityDay : undefined,
-      electricityNight: current.electricityNight && lastReading?.electricityNight ? current.electricityNight - lastReading.electricityNight : undefined,
-      gas: current.gas && lastReading?.gas ? current.gas - lastReading.gas : undefined,
+      electricity: current.electricity && lastReading?.electricity ? current.electricity - lastReading.electricity : undefined,
+      sewage: current.sewage && lastReading?.sewage ? current.sewage - lastReading.sewage : undefined,
     };
 
     addMeterReading({
@@ -77,9 +75,8 @@ export default function MeterReadingsPage() {
                 {[
                   ['Холодная вода', currentReading?.coldWater, currentReading?.consumption?.coldWater],
                   ['Горячая вода', currentReading?.hotWater, currentReading?.consumption?.hotWater],
-                  ['Электро (день)', currentReading?.electricityDay, currentReading?.consumption?.electricityDay],
-                  ['Электро (ночь)', currentReading?.electricityNight, currentReading?.consumption?.electricityNight],
-                  ['Газ', currentReading?.gas, currentReading?.consumption?.gas],
+                  ['Электричество', currentReading?.electricity, currentReading?.consumption?.electricity],
+                  ['Водоотведение', currentReading?.sewage, currentReading?.consumption?.sewage],
                 ].filter(([, v]) => v != null).map(([label, value, diff]) => (
                   <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                     <span className="text-muted">{label}</span>
@@ -102,11 +99,10 @@ export default function MeterReadingsPage() {
           {lastReading && (
             <div style={{ marginBottom: '16px', fontSize: '0.8rem', color: 'var(--color-text-tertiary)' }}>
               Предыдущие показания ({formatMonth(lastReading.month)}):
-              {lastReading.coldWater && ` ХВ: ${lastReading.coldWater}`}
-              {lastReading.hotWater && ` ГВ: ${lastReading.hotWater}`}
-              {lastReading.electricityDay && ` Эд: ${lastReading.electricityDay}`}
-              {lastReading.electricityNight && ` Эн: ${lastReading.electricityNight}`}
-              {lastReading.gas && ` Газ: ${lastReading.gas}`}
+              {lastReading.coldWater != null && ` ХВ: ${lastReading.coldWater}`}
+              {lastReading.hotWater != null && ` ГВ: ${lastReading.hotWater}`}
+              {lastReading.electricity != null && ` Эл: ${lastReading.electricity}`}
+              {lastReading.sewage != null && ` Водоотв: ${lastReading.sewage}`}
             </div>
           )}
 
@@ -114,14 +110,14 @@ export default function MeterReadingsPage() {
             <div className="form-group">
               <label className="form-label">Холодная вода</label>
               <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.coldWater} onChange={e => u('coldWater', e.target.value)} />
-              {form.coldWater && lastReading?.coldWater && (
+              {form.coldWater && lastReading?.coldWater != null && (
                 <div className="form-hint text-success">Расход: +{(+form.coldWater - lastReading.coldWater).toFixed(2)}</div>
               )}
             </div>
             <div className="form-group">
               <label className="form-label">Горячая вода</label>
               <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.hotWater} onChange={e => u('hotWater', e.target.value)} />
-              {form.hotWater && lastReading?.hotWater && (
+              {form.hotWater && lastReading?.hotWater != null && (
                 <div className="form-hint text-success">Расход: +{(+form.hotWater - lastReading.hotWater).toFixed(2)}</div>
               )}
             </div>
@@ -129,27 +125,19 @@ export default function MeterReadingsPage() {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Электричество (день)</label>
-              <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.electricityDay} onChange={e => u('electricityDay', e.target.value)} />
-              {form.electricityDay && lastReading?.electricityDay && (
-                <div className="form-hint text-success">Расход: +{(+form.electricityDay - lastReading.electricityDay).toFixed(2)}</div>
+              <label className="form-label">Электричество</label>
+              <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.electricity} onChange={e => u('electricity', e.target.value)} />
+              {form.electricity && lastReading?.electricity != null && (
+                <div className="form-hint text-success">Расход: +{(+form.electricity - lastReading.electricity).toFixed(2)}</div>
               )}
             </div>
             <div className="form-group">
-              <label className="form-label">Электричество (ночь)</label>
-              <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.electricityNight} onChange={e => u('electricityNight', e.target.value)} />
-              {form.electricityNight && lastReading?.electricityNight && (
-                <div className="form-hint text-success">Расход: +{(+form.electricityNight - lastReading.electricityNight).toFixed(2)}</div>
+              <label className="form-label">Водоотведение</label>
+              <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.sewage} onChange={e => u('sewage', e.target.value)} />
+              {form.sewage && lastReading?.sewage != null && (
+                <div className="form-hint text-success">Расход: +{(+form.sewage - lastReading.sewage).toFixed(2)}</div>
               )}
             </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Газ</label>
-            <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.gas} onChange={e => u('gas', e.target.value)} style={{ maxWidth: '50%' }} />
-            {form.gas && lastReading?.gas && (
-              <div className="form-hint text-success">Расход: +{(+form.gas - lastReading.gas).toFixed(2)}</div>
-            )}
           </div>
 
           <div className="form-group">
@@ -185,16 +173,15 @@ export default function MeterReadingsPage() {
           <h3 className="card-title" style={{ marginBottom: '12px' }}>История показаний</h3>
           <div className="table-container" style={{ border: 'none' }}>
             <table className="table">
-              <thead><tr><th>Месяц</th><th>ХВ</th><th>ГВ</th><th>Эд</th><th>Эн</th><th>Газ</th></tr></thead>
+              <thead><tr><th>Месяц</th><th>ХВ</th><th>ГВ</th><th>Электро</th><th>Водоотв.</th></tr></thead>
               <tbody>
                 {prevReadings.map(r => (
                   <tr key={r.id}>
                     <td>{formatMonth(r.month)}</td>
                     <td>{r.coldWater ?? '—'}</td>
                     <td>{r.hotWater ?? '—'}</td>
-                    <td>{r.electricityDay ?? '—'}</td>
-                    <td>{r.electricityNight ?? '—'}</td>
-                    <td>{r.gas ?? '—'}</td>
+                    <td>{r.electricity ?? '—'}</td>
+                    <td>{r.sewage ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

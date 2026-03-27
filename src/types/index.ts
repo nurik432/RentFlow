@@ -76,17 +76,15 @@ export interface MeterReading {
   month: string; // YYYY-MM
   coldWater?: number;
   hotWater?: number;
-  electricityDay?: number;
-  electricityNight?: number;
-  gas?: number;
+  electricity?: number;
+  sewage?: number;
   photo?: string;
   submittedAt: string;
   consumption?: {
     coldWater?: number;
     hotWater?: number;
-    electricityDay?: number;
-    electricityNight?: number;
-    gas?: number;
+    electricity?: number;
+    sewage?: number;
   };
 }
 

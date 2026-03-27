@@ -185,16 +185,15 @@ export default function PropertyDetailPage() {
           {propReadings.length > 0 ? (
             <div className="table-container" style={{ border: 'none' }}>
               <table className="table">
-                <thead><tr><th>Месяц</th><th>Холодн. вода</th><th>Горяч. вода</th><th>Электро (день)</th><th>Электро (ночь)</th><th>Газ</th><th>Дата подачи</th></tr></thead>
+                <thead><tr><th>Месяц</th><th>Холодн. вода</th><th>Горяч. вода</th><th>Электричество</th><th>Водоотведение</th><th>Дата подачи</th></tr></thead>
                 <tbody>
                   {propReadings.map(r => (
                     <tr key={r.id}>
                       <td>{formatMonth(r.month)}</td>
                       <td>{r.coldWater ?? '—'} {r.consumption?.coldWater != null && <span className="text-muted text-sm">(+{r.consumption.coldWater})</span>}</td>
                       <td>{r.hotWater ?? '—'} {r.consumption?.hotWater != null && <span className="text-muted text-sm">(+{r.consumption.hotWater})</span>}</td>
-                      <td>{r.electricityDay ?? '—'} {r.consumption?.electricityDay != null && <span className="text-muted text-sm">(+{r.consumption.electricityDay})</span>}</td>
-                      <td>{r.electricityNight ?? '—'} {r.consumption?.electricityNight != null && <span className="text-muted text-sm">(+{r.consumption.electricityNight})</span>}</td>
-                      <td>{r.gas ?? '—'} {r.consumption?.gas != null && <span className="text-muted text-sm">(+{r.consumption.gas})</span>}</td>
+                      <td>{r.electricity ?? '—'} {r.consumption?.electricity != null && <span className="text-muted text-sm">(+{r.consumption.electricity})</span>}</td>
+                      <td>{r.sewage ?? '—'} {r.consumption?.sewage != null && <span className="text-muted text-sm">(+{r.consumption.sewage})</span>}</td>
                       <td className="text-muted text-sm">{formatDate(r.submittedAt)}</td>
                     </tr>
                   ))}

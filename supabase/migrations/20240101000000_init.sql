@@ -75,15 +75,13 @@ create table public.meter_readings (
   month text not null, -- Format YYYY-MM
   cold_water numeric,
   hot_water numeric,
-  electricity_day numeric,
-  electricity_night numeric,
-  gas numeric,
+  electricity numeric,
+  sewage numeric,
   photo text,
   consumption_cold_water numeric,
   consumption_hot_water numeric,
-  consumption_electricity_day numeric,
-  consumption_electricity_night numeric,
-  consumption_gas numeric,
+  consumption_electricity numeric,
+  consumption_sewage numeric,
   submitted_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
