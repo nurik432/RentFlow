@@ -50,7 +50,7 @@ export interface Payment {
   type: 'rent' | 'utility';
   status: PaymentStatus;
   month: string; // YYYY-MM
-  paidAt?: string;
+  paidAt?: string | null;
   createdAt: string;
 }
 
@@ -59,11 +59,11 @@ export interface UtilityBill {
   propertyId: string;
   tenantId: string;
   month: string; // YYYY-MM
-  electricity?: number;
-  coldWater?: number;
-  hotWater?: number;
-  gas?: number;
-  total: number;
+  electricityAmount: number;
+  coldWaterAmount: number;
+  hotWaterAmount: number;
+  waterDischargeAmount: number;
+  totalAmount: number;
   acknowledged: boolean;
   acknowledgedAt?: string;
   createdAt: string;
@@ -77,14 +77,12 @@ export interface MeterReading {
   coldWater?: number;
   hotWater?: number;
   electricity?: number;
-  sewage?: number;
   photo?: string;
   submittedAt: string;
   consumption?: {
     coldWater?: number;
     hotWater?: number;
     electricity?: number;
-    sewage?: number;
   };
 }
 

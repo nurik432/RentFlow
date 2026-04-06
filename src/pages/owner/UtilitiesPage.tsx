@@ -5,9 +5,9 @@ import { formatCurrency, formatMonth, getMonthKey } from '../../utils/helpers';
 import { Plus, Receipt, Check, X, Edit } from 'lucide-react';
 import { UtilityBill } from '../../types';
 
-type BillForm = { propertyId: string; month: string; electricity: number; coldWater: number; hotWater: number; gas: number };
+type BillForm = { propertyId: string; month: string; electricityAmount: number; coldWaterAmount: number; hotWaterAmount: number; waterDischargeAmount: number };
 
-const emptyForm: BillForm = { propertyId: '', month: getMonthKey(), electricity: 0, coldWater: 0, hotWater: 0, gas: 0 };
+const emptyForm: BillForm = { propertyId: '', month: getMonthKey(), electricityAmount: 0, coldWaterAmount: 0, hotWaterAmount: 0, waterDischargeAmount: 0 };
 
 export default function UtilitiesPage() {
   const { properties, utilityBills, addUtilityBill, updateUtilityBill } = useData();
@@ -37,27 +37,27 @@ export default function UtilitiesPage() {
     setForm({
       propertyId: bill.propertyId,
       month: bill.month,
-      electricity: bill.electricity || 0,
-      coldWater: bill.coldWater || 0,
-      hotWater: bill.hotWater || 0,
-      gas: bill.gas || 0,
+      electricityAmount: bill.electricityAmount || 0,
+      coldWaterAmount: bill.coldWaterAmount || 0,
+      hotWaterAmount: bill.hotWaterAmount || 0,
+      waterDischargeAmount: bill.waterDischargeAmount || 0,
     });
     setShowForm(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const total = (form.electricity || 0) + (form.coldWater || 0) + (form.hotWater || 0) + (form.gas || 0);
+    const totalAmount = (form.electricityAmount || 0) + (form.coldWaterAmount || 0) + (form.hotWaterAmount || 0) + (form.waterDischargeAmount || 0);
 
     if (editingBill) {
       // Update existing
       updateUtilityBill(editingBill.id, {
         month: form.month,
-        electricity: form.electricity || undefined,
-        coldWater: form.coldWater || undefined,
-        hotWater: form.hotWater || undefined,
-        gas: form.gas || undefined,
-        total,
+        electricityAmount: form.electricityAmount || 0,
+        coldWaterAmount: form.coldWaterAmount || 0,
+        hotWaterAmount: form.hotWaterAmount || 0,
+        waterDischargeAmount: form.waterDischargeAmount || 0,
+        totalAmount,
       });
     } else {
       // Create new
@@ -65,9 +65,9 @@ export default function UtilitiesPage() {
       if (!prop || !prop.tenantId) return;
       addUtilityBill({
         propertyId: form.propertyId, tenantId: prop.tenantId, month: form.month,
-        electricity: form.electricity || undefined, coldWater: form.coldWater || undefined,
-        hotWater: form.hotWater || undefined, gas: form.gas || undefined,
-        total, acknowledged: false
+        electricityAmount: form.electricityAmount || 0, coldWaterAmount: form.coldWaterAmount || 0,
+        hotWaterAmount: form.hotWaterAmount || 0, waterDischargeAmount: form.waterDischargeAmount || 0,
+        totalAmount, acknowledged: false
       });
     }
     setShowForm(false);
@@ -124,28 +124,28 @@ export default function UtilitiesPage() {
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Электричество</label>
-                    <input type="number" className="form-input" placeholder="0" value={form.electricity || ''} onChange={e => u('electricity', +e.target.value)} />
+                    <input type="number" className="form-input" placeholder="0" value={form.electricityAmount || ''} onChange={e => u('electricityAmount', +e.target.value)} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Газ</label>
-                    <input type="number" className="form-input" placeholder="0" value={form.gas || ''} onChange={e => u('gas', +e.target.value)} />
+                    <label className="form-label">Водоотведение</label>
+                    <input type="number" className="form-input" placeholder="0" value={form.waterDischargeAmount || ''} onChange={e => u('waterDischargeAmount', +e.target.value)} />
                   </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Холодная вода</label>
-                    <input type="number" className="form-input" placeholder="0" value={form.coldWater || ''} onChange={e => u('coldWater', +e.target.value)} />
+                    <input type="number" className="form-input" placeholder="0" value={form.coldWaterAmount || ''} onChange={e => u('coldWaterAmount', +e.target.value)} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Горячая вода</label>
-                    <input type="number" className="form-input" placeholder="0" value={form.hotWater || ''} onChange={e => u('hotWater', +e.target.value)} />
+                    <input type="number" className="form-input" placeholder="0" value={form.hotWaterAmount || ''} onChange={e => u('hotWaterAmount', +e.target.value)} />
                   </div>
                 </div>
                 <div className="card" style={{ background: 'var(--color-bg-secondary)', marginTop: '8px' }}>
                   <div className="flex-between">
                     <span style={{ fontWeight: 600 }}>Итого:</span>
                     <span style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--color-primary)' }}>
-                      {formatCurrency((form.electricity || 0) + (form.coldWater || 0) + (form.hotWater || 0) + (form.gas || 0), user?.currency)}
+                      {formatCurrency((form.electricityAmount || 0) + (form.coldWaterAmount || 0) + (form.hotWaterAmount || 0) + (form.waterDischargeAmount || 0), user?.currency)}
                     </span>
                   </div>
                 </div>
@@ -169,7 +169,7 @@ export default function UtilitiesPage() {
                 <th>Электро</th>
                 <th>Хол. вода</th>
                 <th>Гор. вода</th>
-                <th>Газ</th>
+                <th>Водоотв.</th>
                 <th>Итого</th>
                 <th>Подтверждено</th>
                 <th></th>
@@ -182,11 +182,11 @@ export default function UtilitiesPage() {
                   <tr key={bill.id}>
                     <td>{formatMonth(bill.month)}</td>
                     <td style={{ fontWeight: 500 }}>{prop?.name || '—'}</td>
-                    <td>{bill.electricity ? formatCurrency(bill.electricity, user?.currency) : '—'}</td>
-                    <td>{bill.coldWater ? formatCurrency(bill.coldWater, user?.currency) : '—'}</td>
-                    <td>{bill.hotWater ? formatCurrency(bill.hotWater, user?.currency) : '—'}</td>
-                    <td>{bill.gas ? formatCurrency(bill.gas, user?.currency) : '—'}</td>
-                    <td style={{ fontWeight: 600 }}>{formatCurrency(bill.total, user?.currency)}</td>
+                    <td>{bill.electricityAmount ? formatCurrency(bill.electricityAmount, user?.currency) : '—'}</td>
+                    <td>{bill.coldWaterAmount ? formatCurrency(bill.coldWaterAmount, user?.currency) : '—'}</td>
+                    <td>{bill.hotWaterAmount ? formatCurrency(bill.hotWaterAmount, user?.currency) : '—'}</td>
+                    <td>{bill.waterDischargeAmount ? formatCurrency(bill.waterDischargeAmount, user?.currency) : '—'}</td>
+                    <td style={{ fontWeight: 600 }}>{formatCurrency(bill.totalAmount, user?.currency)}</td>
                     <td>
                       {bill.acknowledged ? (
                         <span className="badge badge-success"><Check size={12} /> Да</span>

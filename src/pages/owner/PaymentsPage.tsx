@@ -157,10 +157,16 @@ export default function PaymentsPage() {
                       <select
                         className="form-select"
                         value={p.status}
-                        onChange={e => updatePayment(p.id, {
-                          status: e.target.value as any,
-                          ...(e.target.value === 'received' ? { paidAt: new Date().toISOString() } : {})
-                        })}
+                        onChange={e => {
+                          const newStatus = e.target.value as any;
+                          const updates: any = { status: newStatus };
+                          if (newStatus === 'received' && !p.paidAt) {
+                            updates.paidAt = new Date().toISOString();
+                          } else if (newStatus === 'pending') {
+                            updates.paidAt = null;
+                          }
+                          updatePayment(p.id, updates);
+                        }}
                         style={{ fontSize: '0.8rem', padding: '4px 8px', width: 'auto', minWidth: '120px' }}
                       >
                         <option value="pending">Ожидается</option>

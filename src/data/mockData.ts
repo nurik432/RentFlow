@@ -53,21 +53,21 @@ export const mockPayments: Payment[] = [
 ];
 
 export const mockUtilityBills: UtilityBill[] = [
-  { id: 'util-1', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-01', electricity: 180, coldWater: 45, hotWater: 90, gas: 60, total: 375, acknowledged: true, acknowledgedAt: '2026-02-03', createdAt: '2026-02-01' },
-  { id: 'util-2', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-02', electricity: 200, coldWater: 50, hotWater: 95, gas: 55, total: 400, acknowledged: true, acknowledgedAt: '2026-03-02', createdAt: '2026-03-01' },
-  { id: 'util-3', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-01', electricity: 350, coldWater: 30, hotWater: 0, gas: 0, total: 380, acknowledged: true, acknowledgedAt: '2026-02-02', createdAt: '2026-02-01' },
-  { id: 'util-4', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-02', electricity: 320, coldWater: 35, hotWater: 0, gas: 0, total: 355, acknowledged: false, createdAt: '2026-03-01' },
+  { id: 'util-1', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-01', electricityAmount: 180, coldWaterAmount: 45, hotWaterAmount: 90, waterDischargeAmount: 60, totalAmount: 375, acknowledged: true, acknowledgedAt: '2026-02-03', createdAt: '2026-02-01' },
+  { id: 'util-2', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-02', electricityAmount: 200, coldWaterAmount: 50, hotWaterAmount: 95, waterDischargeAmount: 55, totalAmount: 400, acknowledged: true, acknowledgedAt: '2026-03-02', createdAt: '2026-03-01' },
+  { id: 'util-3', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-01', electricityAmount: 350, coldWaterAmount: 30, hotWaterAmount: 0, waterDischargeAmount: 0, totalAmount: 380, acknowledged: true, acknowledgedAt: '2026-02-02', createdAt: '2026-02-01' },
+  { id: 'util-4', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-02', electricityAmount: 320, coldWaterAmount: 35, hotWaterAmount: 0, waterDischargeAmount: 0, totalAmount: 355, acknowledged: false, createdAt: '2026-03-01' },
 ];
 
 export const mockMeterReadings: MeterReading[] = [
-  { id: 'mr-1', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-01', coldWater: 1245, hotWater: 890, electricityDay: 4520, electricityNight: 1890, gas: 345, submittedAt: '2026-01-28T14:30:00',
-    consumption: { coldWater: 12, hotWater: 8, electricityDay: 180, electricityNight: 75, gas: 15 } },
-  { id: 'mr-2', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-02', coldWater: 1260, hotWater: 900, electricityDay: 4710, electricityNight: 1970, gas: 362, submittedAt: '2026-02-27T10:15:00',
-    consumption: { coldWater: 15, hotWater: 10, electricityDay: 190, electricityNight: 80, gas: 17 } },
-  { id: 'mr-3', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-01', coldWater: 567, electricityDay: 8900, electricityNight: 3200, submittedAt: '2026-01-29T09:00:00',
-    consumption: { coldWater: 8, electricityDay: 350, electricityNight: 120 } },
-  { id: 'mr-4', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-02', coldWater: 578, electricityDay: 9210, electricityNight: 3320, submittedAt: '2026-02-28T16:45:00',
-    consumption: { coldWater: 11, electricityDay: 310, electricityNight: 120 } },
+  { id: 'mr-1', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-01', coldWater: 1245, hotWater: 890, electricity: 6410, submittedAt: '2026-01-28T14:30:00',
+    consumption: { coldWater: 12, hotWater: 8, electricity: 255 } },
+  { id: 'mr-2', propertyId: PROP_1_ID, tenantId: TENANT_1_ID, month: '2026-02', coldWater: 1260, hotWater: 900, electricity: 6680, submittedAt: '2026-02-27T10:15:00',
+    consumption: { coldWater: 15, hotWater: 10, electricity: 270 } },
+  { id: 'mr-3', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-01', coldWater: 567, electricity: 12100, submittedAt: '2026-01-29T09:00:00',
+    consumption: { coldWater: 8, electricity: 470 } },
+  { id: 'mr-4', propertyId: PROP_2_ID, tenantId: TENANT_2_ID, month: '2026-02', coldWater: 578, electricity: 12530, submittedAt: '2026-02-28T16:45:00',
+    consumption: { coldWater: 11, electricity: 430 } },
 ];
 
 export const mockNotifications: AppNotification[] = [

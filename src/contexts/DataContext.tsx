@@ -67,12 +67,10 @@ const mapMeterReadingFromDb = (row: any): any => {
     coldWater: row.consumption_cold_water ?? undefined,
     hotWater: row.consumption_hot_water ?? undefined,
     electricity: row.consumption_electricity ?? undefined,
-    sewage: row.consumption_sewage ?? undefined,
   };
   delete base.consumptionColdWater;
   delete base.consumptionHotWater;
   delete base.consumptionElectricity;
-  delete base.consumptionSewage;
   return base;
 };
 
@@ -84,7 +82,6 @@ const mapMeterReadingToDb = (r: any): any => {
     dbObj.consumption_cold_water = consumption.coldWater ?? null;
     dbObj.consumption_hot_water = consumption.hotWater ?? null;
     dbObj.consumption_electricity = consumption.electricity ?? null;
-    dbObj.consumption_sewage = consumption.sewage ?? null;
   }
   return dbObj;
 };
@@ -282,7 +279,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       await addNotification({
         userId: b.tenantId,
         title: 'Коммунальные платежи',
-        message: `Начислены коммунальные услуги за ${b.month}: ${b.total} TJS.${b.electricity ? ' Электричество: ' + b.electricity + ' TJS.' : ''}${b.coldWater ? ' Холодная вода: ' + b.coldWater + ' TJS.' : ''}${b.hotWater ? ' Горячая вода: ' + b.hotWater + ' TJS.' : ''}${b.gas ? ' Газ: ' + b.gas + ' TJS.' : ''}`,
+        message: `Начислены коммунальные услуги за ${b.month}: ${b.totalAmount} TJS.${b.electricityAmount ? ' Электричество: ' + b.electricityAmount + ' TJS.' : ''}${b.coldWaterAmount ? ' Холодная вода: ' + b.coldWaterAmount + ' TJS.' : ''}${b.hotWaterAmount ? ' Горячая вода: ' + b.hotWaterAmount + ' TJS.' : ''}${b.waterDischargeAmount ? ' Водоотведение: ' + b.waterDischargeAmount + ' TJS.' : ''}`,
         type: 'utility_bill',
         channel: 'inapp',
         read: false,

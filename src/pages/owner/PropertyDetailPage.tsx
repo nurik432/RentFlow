@@ -33,9 +33,12 @@ export default function PropertyDetailPage() {
   };
 
   const handleChangePaymentStatus = (paymentId: string, newStatus: PaymentStatus) => {
-    const updates: { status: PaymentStatus; paidAt?: string } = { status: newStatus };
-    if (newStatus === 'received') {
+    const payment = payments.find(p => p.id === paymentId);
+    const updates: { status: PaymentStatus; paidAt?: string | null } = { status: newStatus };
+    if (newStatus === 'received' && payment && !payment.paidAt) {
       updates.paidAt = new Date().toISOString();
+    } else if (newStatus === 'pending') {
+      updates.paidAt = null;
     }
     updatePayment(paymentId, updates);
   };
@@ -151,16 +154,16 @@ export default function PropertyDetailPage() {
             {propBills.length > 0 ? (
               <div className="table-container" style={{ border: 'none' }}>
                 <table className="table">
-                  <thead><tr><th>Месяц</th><th>Электро</th><th>Хол. вода</th><th>Гор. вода</th><th>Газ</th><th>Итого</th><th>Статус</th></tr></thead>
+                  <thead><tr><th>Месяц</th><th>Электро</th><th>Хол. вода</th><th>Гор. вода</th><th>Водоотв.</th><th>Итого</th><th>Статус</th></tr></thead>
                   <tbody>
                     {propBills.map(bill => (
                       <tr key={bill.id}>
                         <td>{formatMonth(bill.month)}</td>
-                        <td>{bill.electricity ? formatCurrency(bill.electricity, user?.currency) : '—'}</td>
-                        <td>{bill.coldWater ? formatCurrency(bill.coldWater, user?.currency) : '—'}</td>
-                        <td>{bill.hotWater ? formatCurrency(bill.hotWater, user?.currency) : '—'}</td>
-                        <td>{bill.gas ? formatCurrency(bill.gas, user?.currency) : '—'}</td>
-                        <td style={{ fontWeight: 600 }}>{formatCurrency(bill.total, user?.currency)}</td>
+                        <td>{bill.electricityAmount ? formatCurrency(bill.electricityAmount, user?.currency) : '—'}</td>
+                        <td>{bill.coldWaterAmount ? formatCurrency(bill.coldWaterAmount, user?.currency) : '—'}</td>
+                        <td>{bill.hotWaterAmount ? formatCurrency(bill.hotWaterAmount, user?.currency) : '—'}</td>
+                        <td>{bill.waterDischargeAmount ? formatCurrency(bill.waterDischargeAmount, user?.currency) : '—'}</td>
+                        <td style={{ fontWeight: 600 }}>{formatCurrency(bill.totalAmount, user?.currency)}</td>
                         <td>
                           {bill.acknowledged ? (
                             <span className="badge badge-success">Подтверждено</span>
@@ -185,7 +188,7 @@ export default function PropertyDetailPage() {
           {propReadings.length > 0 ? (
             <div className="table-container" style={{ border: 'none' }}>
               <table className="table">
-                <thead><tr><th>Месяц</th><th>Холодн. вода</th><th>Горяч. вода</th><th>Электричество</th><th>Водоотведение</th><th>Дата подачи</th></tr></thead>
+                <thead><tr><th>Месяц</th><th>Холодн. вода</th><th>Горяч. вода</th><th>Электричество</th><th>Дата подачи</th></tr></thead>
                 <tbody>
                   {propReadings.map(r => (
                     <tr key={r.id}>
@@ -193,7 +196,6 @@ export default function PropertyDetailPage() {
                       <td>{r.coldWater ?? '—'} {r.consumption?.coldWater != null && <span className="text-muted text-sm">(+{r.consumption.coldWater})</span>}</td>
                       <td>{r.hotWater ?? '—'} {r.consumption?.hotWater != null && <span className="text-muted text-sm">(+{r.consumption.hotWater})</span>}</td>
                       <td>{r.electricity ?? '—'} {r.consumption?.electricity != null && <span className="text-muted text-sm">(+{r.consumption.electricity})</span>}</td>
-                      <td>{r.sewage ?? '—'} {r.consumption?.sewage != null && <span className="text-muted text-sm">(+{r.consumption.sewage})</span>}</td>
                       <td className="text-muted text-sm">{formatDate(r.submittedAt)}</td>
                     </tr>
                   ))}

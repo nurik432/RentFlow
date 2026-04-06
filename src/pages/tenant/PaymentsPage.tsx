@@ -55,16 +55,16 @@ export default function PaymentsPage() {
       {myBills.length > 0 ? (
         <div className="table-container">
           <table className="table">
-            <thead><tr><th>Месяц</th><th>Электро</th><th>Хол. вода</th><th>Гор. вода</th><th>Газ</th><th>Итого</th><th>Статус</th></tr></thead>
+            <thead><tr><th>Месяц</th><th>Электро</th><th>Хол. вода</th><th>Гор. вода</th><th>Водоотв.</th><th>Итого</th><th>Статус</th></tr></thead>
             <tbody>
               {myBills.map(bill => (
                 <tr key={bill.id}>
                   <td>{formatMonth(bill.month)}</td>
-                  <td>{bill.electricity ? formatCurrency(bill.electricity, user?.currency) : '—'}</td>
-                  <td>{bill.coldWater ? formatCurrency(bill.coldWater, user?.currency) : '—'}</td>
-                  <td>{bill.hotWater ? formatCurrency(bill.hotWater, user?.currency) : '—'}</td>
-                  <td>{bill.gas ? formatCurrency(bill.gas, user?.currency) : '—'}</td>
-                  <td style={{ fontWeight: 600 }}>{formatCurrency(bill.total, user?.currency)}</td>
+                  <td>{bill.electricityAmount ? formatCurrency(bill.electricityAmount, user?.currency) : '—'}</td>
+                  <td>{bill.coldWaterAmount ? formatCurrency(bill.coldWaterAmount, user?.currency) : '—'}</td>
+                  <td>{bill.hotWaterAmount ? formatCurrency(bill.hotWaterAmount, user?.currency) : '—'}</td>
+                  <td>{bill.waterDischargeAmount ? formatCurrency(bill.waterDischargeAmount, user?.currency) : '—'}</td>
+                  <td style={{ fontWeight: 600 }}>{formatCurrency(bill.totalAmount, user?.currency)}</td>
                   <td>
                     {bill.acknowledged ? (
                       <span className="badge badge-success"><Check size={12} /> Подтверждено</span>

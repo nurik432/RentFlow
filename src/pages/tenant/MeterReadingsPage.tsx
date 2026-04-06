@@ -17,7 +17,7 @@ export default function MeterReadingsPage() {
   const currentReading = meterReadings.find(m => m.tenantId === user?.id && m.month === currentMonth);
 
   const [form, setForm] = useState({
-    coldWater: '', hotWater: '', electricity: '', sewage: '', photo: ''
+    coldWater: '', hotWater: '', electricity: '', photo: ''
   });
   const [submitted, setSubmitted] = useState(!!currentReading);
 
@@ -29,14 +29,12 @@ export default function MeterReadingsPage() {
       coldWater: +form.coldWater || undefined,
       hotWater: +form.hotWater || undefined,
       electricity: +form.electricity || undefined,
-      sewage: +form.sewage || undefined,
     };
 
     const consumption = {
       coldWater: current.coldWater && lastReading?.coldWater ? current.coldWater - lastReading.coldWater : undefined,
       hotWater: current.hotWater && lastReading?.hotWater ? current.hotWater - lastReading.hotWater : undefined,
       electricity: current.electricity && lastReading?.electricity ? current.electricity - lastReading.electricity : undefined,
-      sewage: current.sewage && lastReading?.sewage ? current.sewage - lastReading.sewage : undefined,
     };
 
     addMeterReading({
@@ -76,7 +74,6 @@ export default function MeterReadingsPage() {
                   ['Холодная вода', currentReading?.coldWater, currentReading?.consumption?.coldWater],
                   ['Горячая вода', currentReading?.hotWater, currentReading?.consumption?.hotWater],
                   ['Электричество', currentReading?.electricity, currentReading?.consumption?.electricity],
-                  ['Водоотведение', currentReading?.sewage, currentReading?.consumption?.sewage],
                 ].filter(([, v]) => v != null).map(([label, value, diff]) => (
                   <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                     <span className="text-muted">{label}</span>
@@ -102,7 +99,6 @@ export default function MeterReadingsPage() {
               {lastReading.coldWater != null && ` ХВ: ${lastReading.coldWater}`}
               {lastReading.hotWater != null && ` ГВ: ${lastReading.hotWater}`}
               {lastReading.electricity != null && ` Эл: ${lastReading.electricity}`}
-              {lastReading.sewage != null && ` Водоотв: ${lastReading.sewage}`}
             </div>
           )}
 
@@ -129,13 +125,6 @@ export default function MeterReadingsPage() {
               <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.electricity} onChange={e => u('electricity', e.target.value)} />
               {form.electricity && lastReading?.electricity != null && (
                 <div className="form-hint text-success">Расход: +{(+form.electricity - lastReading.electricity).toFixed(2)}</div>
-              )}
-            </div>
-            <div className="form-group">
-              <label className="form-label">Водоотведение</label>
-              <input className="form-input" type="number" step="0.01" placeholder="Показание" value={form.sewage} onChange={e => u('sewage', e.target.value)} />
-              {form.sewage && lastReading?.sewage != null && (
-                <div className="form-hint text-success">Расход: +{(+form.sewage - lastReading.sewage).toFixed(2)}</div>
               )}
             </div>
           </div>
@@ -173,7 +162,7 @@ export default function MeterReadingsPage() {
           <h3 className="card-title" style={{ marginBottom: '12px' }}>История показаний</h3>
           <div className="table-container" style={{ border: 'none' }}>
             <table className="table">
-              <thead><tr><th>Месяц</th><th>ХВ</th><th>ГВ</th><th>Электро</th><th>Водоотв.</th></tr></thead>
+              <thead><tr><th>Месяц</th><th>ХВ</th><th>ГВ</th><th>Электро</th></tr></thead>
               <tbody>
                 {prevReadings.map(r => (
                   <tr key={r.id}>
@@ -181,7 +170,6 @@ export default function MeterReadingsPage() {
                     <td>{r.coldWater ?? '—'}</td>
                     <td>{r.hotWater ?? '—'}</td>
                     <td>{r.electricity ?? '—'}</td>
-                    <td>{r.sewage ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
