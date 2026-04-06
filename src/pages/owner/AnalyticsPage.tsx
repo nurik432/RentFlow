@@ -17,7 +17,7 @@ export default function AnalyticsPage() {
 
   const totalRent = properties.filter(p => p.status === 'rented').reduce((s, p) => s + p.monthlyRent, 0);
   const yearTotal = monthlyRevenue.reduce((s, m) => s + m.amount, 0);
-  const totalUtilities = utilityBills.reduce((s, u) => s + u.total, 0);
+  const totalUtilities = utilityBills.reduce((s, u) => s + u.totalAmount, 0);
 
   const chartData = {
     labels: monthlyRevenue.map(m => m.month),
@@ -48,7 +48,7 @@ export default function AnalyticsPage() {
         'Адрес': prop.address,
         'Арендатор': tenant,
         'Аренда': prop.monthlyRent,
-        'Коммуналка': utility?.total || 0,
+        'Коммуналка': utility?.totalAmount || 0,
         'Статус оплаты': monthPay?.status === 'received' ? 'Получен' : 'Ожидается',
         'Месяц': formatMonth(currentMonth)
       };
@@ -112,13 +112,13 @@ export default function AnalyticsPage() {
                 const tenant = prop.tenantId === 'tenant-1' ? 'Мария Петрова' : 'Дмитрий Сидоров';
                 const pay = payments.find(p => p.propertyId === prop.id && p.month === currentMonth);
                 const util = utilityBills.find(u => u.propertyId === prop.id && u.month === currentMonth);
-                const total = prop.monthlyRent + (util?.total || 0);
+                const total = prop.monthlyRent + (util?.totalAmount || 0);
                 return (
                   <tr key={prop.id}>
                     <td style={{ fontWeight: 500 }}>{prop.name}</td>
                     <td>{tenant}</td>
                     <td>{formatCurrency(prop.monthlyRent, user?.currency)}</td>
-                    <td>{util ? formatCurrency(util.total, user?.currency) : '—'}</td>
+                    <td>{util ? formatCurrency(util.totalAmount, user?.currency) : '—'}</td>
                     <td style={{ fontWeight: 600 }}>{formatCurrency(total, user?.currency)}</td>
                     <td>
                       <span className={`badge badge-${pay?.status === 'received' ? 'success' : 'warning'}`}>

@@ -192,7 +192,7 @@ export default function DashboardPage() {
                     <td style={{ fontWeight: 500 }}>{prop.name}</td>
                     <td>{tenantName}</td>
                     <td>{formatCurrency(prop.monthlyRent, user?.currency)}</td>
-                    <td>{utility ? formatCurrency(utility.total, user?.currency) : '—'}</td>
+                    <td>{utility ? formatCurrency(utility.totalAmount, user?.currency) : '—'}</td>
                     <td>
                       <span className={`badge badge-${payment?.status === 'received' ? 'success' : payment?.status === 'overdue' ? 'error' : 'warning'}`}>
                         {payment?.status === 'received' ? 'Получен' : payment?.status === 'overdue' ? 'Просрочен' : payment ? 'Ожидается' : 'Нет счёта'}

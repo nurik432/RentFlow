@@ -105,7 +105,7 @@ export default function TenantDashboardPage() {
                 )}
               </div>
               <div className="stat-card-label" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>Коммунальные услуги</div>
-              <div className="stat-card-value" style={{ fontSize: '1.75rem' }}>{monthBill ? formatCurrency(monthBill.total, user?.currency) : '—'}</div>
+              <div className="stat-card-value" style={{ fontSize: '1.75rem' }}>{monthBill ? formatCurrency(monthBill.totalAmount, user?.currency) : '—'}</div>
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function TenantDashboardPage() {
                     <div>
                       <div style={{ fontWeight: 600, fontSize: '1.05rem', marginBottom: '4px' }}>Коммуналка {formatMonth(bill.month)}</div>
                       <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-                        К оплате: <span style={{ fontWeight: 700, color: 'var(--color-text)' }}>{formatCurrency(bill.total, user?.currency)}</span>
+                        К оплате: <span style={{ fontWeight: 700, color: 'var(--color-text)' }}>{formatCurrency(bill.totalAmount, user?.currency)}</span>
                       </div>
                     </div>
                     <button className="btn btn-primary btn-sm" onClick={() => navigate('/tenant/payments')}>
